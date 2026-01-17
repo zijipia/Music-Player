@@ -3,20 +3,36 @@ import type { Track } from "./music-player"
 interface NowPlayingProps {
   track: Track | null
   isPlaying: boolean
+  isLoading: boolean
   currentTime: number
   duration: number
 }
 
-export function NowPlaying({ track, isPlaying, currentTime, duration }: NowPlayingProps) {
+export function NowPlaying({ track, isPlaying, isLoading, currentTime, duration }: NowPlayingProps) {
   return (
     <div className="flex flex-col items-center justify-center py-12">
       {track ? (
         <div className="w-full max-w-sm text-center">
-          <div className="mb-6 h-64 w-full rounded-xl bg-gradient-to-br from-primary via-secondary to-accent shadow-2xl animate-pulse" />
+          <div className="mb-6 h-64 w-full rounded-xl shadow-2xl overflow-hidden">
+            {track.thumbnail ? (
+              <img
+                src={track.thumbnail || "/placeholder.svg"}
+                alt={track.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-primary via-secondary to-accent" />
+            )}
+          </div>
           <h2 className="text-2xl font-bold text-foreground text-balance">{track.title}</h2>
           <p className="text-muted-foreground mt-1">{track.artist}</p>
           <p className="text-sm text-accent mt-2">{track.source.toUpperCase()}</p>
-          {isPlaying && (
+          {isLoading && (
+            <div className="mt-6">
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            </div>
+          )}
+          {isPlaying && !isLoading && (
             <div className="mt-6 flex items-center justify-center gap-1">
               <span className="inline-block w-1 h-8 bg-primary animate-bounce" style={{ animationDelay: "0s" }} />
               <span className="inline-block w-1 h-6 bg-primary animate-bounce" style={{ animationDelay: "0.2s" }} />
