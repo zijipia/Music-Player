@@ -6,6 +6,7 @@ import { NowPlaying } from "./now-playing"
 import { Queue } from "./queue"
 import { SearchResults } from "./search-results"
 import { useAudioPlayer } from "@/hooks/use-audio-player"
+import { useHealthCheck } from "@/hooks/use-health-check"
 
 export interface Track {
   id: string
@@ -23,6 +24,8 @@ export function MusicPlayer() {
   const [queue, setQueue] = useState<Track[]>([])
   const [searchResults, setSearchResults] = useState<Track[]>([])
   const [volume, setVolume] = useState(70)
+
+  const { isHealthy, isChecking, error: healthError } = useHealthCheck()
 
   const {
     playTrack,
@@ -99,10 +102,40 @@ export function MusicPlayer() {
     <div className="flex h-screen flex-col bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl px-6 py-4">
+        <div className="mx-auto max-w-7xl px-6 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-primary">ZiMusic</h1>
+          <div className="flex items-center gap-2">
+            {isChecking ? (
+              <span className="text-xs text-muted-foreground">Checking backend...</span>
+            ) : isHealthy ? (
+              <span className="flex items-center gap-1 text-xs text-green-500">
+                <span className="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
+                Connected
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-xs text-red-500">
+                <span className="inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                Disconnected
+              </span>
+            )}
+          </div>
         </div>
       </header>
+
+      {!isHealthy && !isChecking && (
+        <div className="bg-destructive/10 border-b border-destructive/20 px-6 py-4">
+          <div className="max-w-7xl mx-auto">
+            <h3 className="font-semibold text-destructive text-sm mb-1">Backend Connection Error</h3>
+            <p className="text-sm text-destructive/90 mb-2">{healthError}</p>
+            <p className="text-xs text-destructive/70">
+              Please ensure the backend server is running at{" "}
+              <code className="bg-destructive/5 px-2 py-1 rounded">
+                {process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001"}
+              </code>
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
@@ -113,9 +146,10 @@ export function MusicPlayer() {
               <button
                 key={tab}
                 onClick={() => setCurrentTab(tab as typeof currentTab)}
+                disabled={!isHealthy && tab === "search"}
                 className={`w-full rounded-lg px-4 py-2 text-left transition-colors capitalize ${
                   currentTab === tab ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
-                }`}
+                } ${!isHealthy && tab === "search" ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 {tab === "now-playing" ? "Now Playing" : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
@@ -129,7 +163,7 @@ export function MusicPlayer() {
 
         {/* Main Panel */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          <SearchBar onSearch={handleSearch} />
+          <SearchBar onSearch={handleSearch} disabled={!isHealthy} />
 
           {/* Error Display */}
           {error && (
@@ -153,7 +187,12 @@ export function MusicPlayer() {
               <Queue tracks={queue} onRemove={handleRemoveFromQueue} onClear={handleClearQueue} />
             )}
             {currentTab === "search" && (
-              <SearchResults results={searchResults} onAddToQueue={handleAddToQueue} onPlay={handlePlayTrack} />
+              <SearchResults
+                results={searchResults}
+                onAddToQueue={handleAddToQueue}
+                onPlay={handlePlayTrack}
+                disabled={!isHealthy}
+              />
             )}
           </div>
         </div>
@@ -204,7 +243,7 @@ export function MusicPlayer() {
               </button>
               <button
                 onClick={togglePlayPause}
-                disabled={isLoading || !currentTrack}
+                disabled={isLoading || !currentTrack || !isHealthy}
                 className="rounded-lg bg-primary p-2 text-primary-foreground hover:bg-secondary transition-colors disabled:opacity-50"
                 title={isPlaying ? "Pause" : "Play"}
               >
