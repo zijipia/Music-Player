@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect } from "react"
 import { SearchBar } from "./search-bar"
 import { NowPlaying } from "./now-playing"
 import { Queue } from "./queue"
-import { Playlists } from "./playlists"
 import { SearchResults } from "./search-results"
 import { useAudioPlayer } from "@/hooks/use-audio-player"
 
@@ -19,7 +18,7 @@ export interface Track {
 }
 
 export function MusicPlayer() {
-  const [currentTab, setCurrentTab] = useState<"now-playing" | "queue" | "playlists" | "search">("now-playing")
+  const [currentTab, setCurrentTab] = useState<"now-playing" | "queue" | "search">("now-playing")
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null)
   const [queue, setQueue] = useState<Track[]>([])
   const [searchResults, setSearchResults] = useState<Track[]>([])
@@ -110,7 +109,7 @@ export function MusicPlayer() {
         {/* Sidebar Navigation */}
         <nav className="w-48 border-r border-border bg-card/30 p-4">
           <div className="space-y-2">
-            {["now-playing", "queue", "playlists", "search"].map((tab) => (
+            {["now-playing", "queue", "search"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setCurrentTab(tab as typeof currentTab)}
@@ -153,7 +152,6 @@ export function MusicPlayer() {
             {currentTab === "queue" && (
               <Queue tracks={queue} onRemove={handleRemoveFromQueue} onClear={handleClearQueue} />
             )}
-            {currentTab === "playlists" && <Playlists />}
             {currentTab === "search" && (
               <SearchResults results={searchResults} onAddToQueue={handleAddToQueue} onPlay={handlePlayTrack} />
             )}
