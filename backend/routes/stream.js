@@ -1,27 +1,31 @@
-import express from "express"
+import express from "express";
 
-const router = express.Router()
+import { getManager } from "ziplayer";
+
+const router = express.Router();
 
 router.post("/play", async (req, res) => {
-  const { track } = req.body
+  const { track } = req.body;
 
   if (!track) {
-    return res.status(400).json({ error: "Track required" })
+    return res.status(400).json({ error: "Track required" });
   }
 
   try {
-    const streamInfo = await req.musicService.getStream(track)
+    const player = await getManager().create("default");
 
+    const streamInfo = await player.save(track); //return ReadableStream
+    console.log("Stream Info:", streamInfo);
     if (!streamInfo) {
-      return res.status(404).json({ error: "Stream not available" })
+      return res.status(404).json({ error: "Stream not available" });
     }
 
-    res.setHeader("Content-Type", "audio/webm")
-    streamInfo.stream.pipe(res)
+    res.setHeader("Content-Type", "audio/webm");
+    streamInfo.pipe(res);
   } catch (error) {
-    console.error("Stream error:", error)
-    res.status(500).json({ error: "Stream failed" })
+    console.error("Stream error:", error);
+    res.status(500).json({ error: "Stream failed" });
   }
-})
+});
 
-export { router as streamRoutes }
+export { router as streamRoutes };

@@ -1,21 +1,21 @@
-import express from "express"
-
-const router = express.Router()
+import express from "express";
+import { getManager } from "ziplayer";
+const router = express.Router();
 
 router.get("/", async (req, res) => {
-  const { q, source = "all" } = req.query
+  const { q, source = "all" } = req.query;
 
   if (!q) {
-    return res.status(400).json({ error: "Query parameter required" })
+    return res.status(400).json({ error: "Query parameter required" });
   }
 
   try {
-    const results = await req.musicService.searchTracks(q, source)
-    res.json({ results, total: results.length })
+    const result = await getManager().search(q, source);
+    res.json({ results: result.tracks, total: result.tracks.length });
   } catch (error) {
-    console.error("Search error:", error)
-    res.status(500).json({ error: "Search failed" })
+    console.error("Search error:", error);
+    res.status(500).json({ error: "Search failed" });
   }
-})
+});
 
-export { router as searchRoutes }
+export { router as searchRoutes };

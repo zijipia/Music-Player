@@ -1,14 +1,20 @@
-"use client"
+"use client";
 
-import type { Track } from "./music-player"
+import type { Track } from "./music-player";
 
 interface SearchResultsProps {
-  results: Track[]
-  onAddToQueue: (track: Track) => void
-  onPlay: (track: Track) => void
+  results: Track[];
+  onAddToQueue: (track: Track) => void;
+  onPlay: (track: Track) => void;
 }
 
-export function SearchResults({ results, onAddToQueue, onPlay }: SearchResultsProps) {
+export function SearchResults({
+  results,
+  onAddToQueue,
+  onPlay,
+}: SearchResultsProps) {
+  console.log(results);
+
   return (
     <div>
       <h2 className="text-xl font-bold text-foreground mb-4">Search Results</h2>
@@ -21,12 +27,22 @@ export function SearchResults({ results, onAddToQueue, onPlay }: SearchResultsPr
               key={track.id}
               className="flex items-center gap-4 rounded-lg bg-card p-4 hover:bg-muted transition-colors"
             >
-              <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-primary to-secondary flex-shrink-0" />
+              {/* <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-primary to-secondary flex-shrink-0" /> */}
+              <img
+                src={track.thumbnail}
+                alt={track.title ?? "Track thumbnail"}
+                className="h-12 w-12 rounded-lg object-cover flex-shrink-0"
+              />
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-foreground truncate">{track.title}</p>
-                <p className="text-sm text-muted-foreground truncate">{track.artist}</p>
+                <p className="font-semibold text-foreground truncate">
+                  {track.title}
+                </p>
+                <p className="text-sm text-muted-foreground truncate">
+                  {track.artist}
+                </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {track.source.toUpperCase()} • {formatDuration(track.duration)}
+                  {track.source.toUpperCase()} •{" "}
+                  {formatDuration(track.duration)}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -50,11 +66,11 @@ export function SearchResults({ results, onAddToQueue, onPlay }: SearchResultsPr
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function formatDuration(seconds: number): string {
-  const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  return `${mins}:${secs.toString().padStart(2, "0")}`
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
