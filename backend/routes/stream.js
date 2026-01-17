@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.post("/play", async (req, res) => {
   const { track } = req.body;
+  console.log("Player created:", track);
 
   if (!track) {
     return res.status(400).json({ error: "Track required" });

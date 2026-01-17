@@ -13,8 +13,6 @@ export function SearchResults({
   onAddToQueue,
   onPlay,
 }: SearchResultsProps) {
-  console.log(results);
-
   return (
     <div>
       <h2 className="text-xl font-bold text-foreground mb-4">Search Results</h2>
