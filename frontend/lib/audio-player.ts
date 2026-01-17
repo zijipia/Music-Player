@@ -1,9 +1,11 @@
 export class AudioPlayer {
   private audio: HTMLAudioElement
   private listeners: Map<string, Function[]> = new Map()
+  private currentBlobUrl: string | null = null
 
   constructor() {
     this.audio = new Audio()
+    this.audio.crossOrigin = "anonymous"
     this.setupListeners()
   }
 
@@ -13,19 +15,47 @@ export class AudioPlayer {
     this.audio.addEventListener("ended", () => this.emit("ended"))
     this.audio.addEventListener("play", () => this.emit("play"))
     this.audio.addEventListener("pause", () => this.emit("pause"))
-    this.audio.addEventListener("error", (e) => this.emit("error", e))
+    this.audio.addEventListener("error", (e) => {
+      console.error("[v0] Audio error:", e)
+      this.emit("error", e)
+    })
     this.audio.addEventListener("loadstart", () => this.emit("loading"))
     this.audio.addEventListener("canplay", () => this.emit("canplay"))
   }
 
   async playStream(trackData: { id: string; title: string; artist: string; source: string }) {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001"
-      const streamUrl = `${backendUrl}/api/stream/play`
+      console.log("[v0] Starting stream for track:", trackData)
 
-      // Create a blob URL or stream directly
-      this.audio.src = streamUrl + `?trackId=${trackData.id}&source=${trackData.source}`
-      this.audio.play()
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001"
+
+      const response = await fetch(`${backendUrl}/api/stream/play`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ track: trackData }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Stream request failed: ${response.statusText}`)
+      }
+
+      console.log("[v0] Stream response received, creating blob URL")
+
+      const blob = await response.blob()
+      console.log("[v0] Blob created with type:", blob.type, "size:", blob.size)
+
+      // Clean up previous blob URL
+      if (this.currentBlobUrl) {
+        URL.revokeObjectURL(this.currentBlobUrl)
+      }
+
+      this.currentBlobUrl = URL.createObjectURL(blob)
+      this.audio.src = this.currentBlobUrl
+
+      console.log("[v0] Audio source set, attempting to play")
+      await this.audio.play()
       this.emit("playback", { status: "playing", track: trackData })
     } catch (error) {
       console.error("[v0] Streaming error:", error)
@@ -87,5 +117,9 @@ export class AudioPlayer {
   destroy() {
     this.audio.pause()
     this.audio.src = ""
+    if (this.currentBlobUrl) {
+      URL.revokeObjectURL(this.currentBlobUrl)
+      this.currentBlobUrl = null
+    }
   }
 }
