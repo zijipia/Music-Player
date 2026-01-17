@@ -65,6 +65,20 @@ export function MusicPlayer() {
 		(track: Track) => {
 			setCurrentTrack(track);
 			playTrack(track);
+try{
+if ("mediaSession" in navigator && this.currentTrack) {
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: track.title,
+    artist: track.artist,
+    artwork: [
+      {
+        src: this.currentTrack.thumbnail || "/placeholder.svg",
+        sizes: "512x512"
+      },
+    ],
+  })
+}
+}catch(e){}
 		},
 		[playTrack],
 	);
