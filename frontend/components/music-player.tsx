@@ -63,10 +63,17 @@ export function MusicPlayer() {
 	const handleSearchSuggestions = useCallback(async () => {
 		try {
 			const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
-			const response = await fetch(`${backendUrl}/api/suggestions?q=${currentTrack?.url || ""}`);
+			const response = await fetch(`${backendUrl}/api/suggestions`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ track: currentTrack }),
+			});
+
 			const data = await response.json();
 			console.log("[v0] Suggestions results:", data);
-			setSearchResults(data.results || []);
+			setSuggestions(data.results || []);
 			setCurrentTab("suggestions");
 		} catch (error) {
 			console.error("[v0] Suggestions error:", error);

@@ -8,6 +8,7 @@ import { SoundCloudPlugin, YouTubePlugin, SpotifyPlugin } from "@ziplayer/plugin
 
 import { searchRoutes } from "./routes/search.js";
 import { streamRoutes } from "./routes/stream.js";
+import { suggestionsRouter } from "./routes/suggestions.js";
 
 dotenv.config();
 
@@ -34,6 +35,7 @@ app.use((req, res, next) => {
 // Routes
 app.use("/api/search", searchRoutes);
 app.use("/api/stream", streamRoutes);
+app.use("/api/suggestions", suggestionsRouter);
 
 // Health check
 app.get("/api/health", (req, res) => {
