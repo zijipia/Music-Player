@@ -77,7 +77,7 @@ export class AudioPlayer {
 			this.currentTrack = trackData;
 			const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 			const currentTime = this.audio.currentTime || 0;
-
+try{
 			// BƯỚC 1: Phát ngay với progressive stream
 			const params = new URLSearchParams({
 				trackData: JSON.stringify(trackData),
@@ -90,7 +90,7 @@ export class AudioPlayer {
 
 			await this.audio.play();
 			this.emit("playback", { status: "playing", track: trackData, mode: "progressive" });
-
+}catch(e){console.log(e)};
 			// BƯỚC 2: Tải full blob ở background (không block playback)
 			console.log("[AudioPlayer] 📥 Downloading full stream in background...");
 			this.isBuffering = true;
