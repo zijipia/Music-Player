@@ -65,20 +65,23 @@ export function MusicPlayer() {
 		(track: Track) => {
 			setCurrentTrack(track);
 			playTrack(track);
-try{
-if ("mediaSession" in navigator && this.currentTrack) {
-  navigator.mediaSession.metadata = new MediaMetadata({
-    title: track.title,
-    artist: track.artist,
-    artwork: [
-      {
-        src: this.currentTrack.thumbnail || "/placeholder.svg",
-        sizes: "512x512"
-      },
-    ],
-  })
-}
-}catch(e){}
+			try {
+				if ("mediaSession" in navigator && track) {
+					navigator.mediaSession.metadata = new MediaMetadata({
+						title: track.title,
+						artist: track.artist,
+						artwork: [
+							{
+								src: track.thumbnail || "/placeholder.svg",
+								sizes: "512x512",
+							},
+						],
+					});
+
+					navigator.mediaSession.setActionHandler("previoustrack", handlePlayPrevious);
+					navigator.mediaSession.setActionHandler("nexttrack", handlePlayNext);
+				}
+			} catch (e) {}
 		},
 		[playTrack],
 	);
@@ -119,19 +122,18 @@ if ("mediaSession" in navigator && this.currentTrack) {
 				<div className='mx-auto max-w-7xl px-6 py-4 flex justify-between items-center'>
 					<h1 className='text-2xl font-bold text-primary'>ZiMusic</h1>
 					<div className='flex items-center gap-2'>
-						{isChecking ? (
+						{isChecking ?
 							<span className='text-xs text-muted-foreground'>Checking backend...</span>
-						) : isHealthy ? (
+						: isHealthy ?
 							<span className='flex items-center gap-1 text-xs text-green-500'>
 								<span className='inline-block w-2 h-2 bg-green-500 rounded-full'></span>
 								Connected
 							</span>
-						) : (
-							<span className='flex items-center gap-1 text-xs text-red-500'>
+						:	<span className='flex items-center gap-1 text-xs text-red-500'>
 								<span className='inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse'></span>
 								Disconnected
 							</span>
-						)}
+						}
 					</div>
 				</div>
 			</header>
@@ -242,14 +244,12 @@ if ("mediaSession" in navigator && this.currentTrack) {
 
 					<div className='flex items-center justify-between gap-4'>
 						<div className='flex-1 min-w-0'>
-							{currentTrack ? (
+							{currentTrack ?
 								<div className='truncate'>
 									<p className='font-semibold text-foreground truncate'>{currentTrack.title}</p>
 									<p className='text-sm text-muted-foreground truncate'>{currentTrack.artist}</p>
 								</div>
-							) : (
-								<p className='text-muted-foreground'>No track playing</p>
-							)}
+							:	<p className='text-muted-foreground'>No track playing</p>}
 						</div>
 
 						{/* Playback Controls */}
@@ -265,7 +265,11 @@ if ("mediaSession" in navigator && this.currentTrack) {
 								disabled={isLoading || !currentTrack || !isHealthy}
 								className='rounded-lg bg-primary p-2 text-primary-foreground hover:bg-secondary transition-colors disabled:opacity-50'
 								title={isPlaying ? "Pause" : "Play"}>
-								{isLoading ? "⟳" : isPlaying ? "⏸" : "▶"}
+								{isLoading ?
+									"⟳"
+								: isPlaying ?
+									"⏸"
+								:	"▶"}
 							</button>
 							<button
 								onClick={handlePlayNext}
