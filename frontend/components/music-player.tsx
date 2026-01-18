@@ -7,6 +7,7 @@ import { Queue } from "./queue";
 import { SearchResults } from "./search-results";
 import { useAudioPlayer } from "@/hooks/use-audio-player";
 import { useHealthCheck } from "@/hooks/use-health-check";
+import { Music, Search, List, Play, Pause, SkipForward, SkipBack, Volume2, ArrowDownToLine, RefreshCw } from "lucide-react";
 
 export interface Track {
 	id: string;
@@ -34,6 +35,7 @@ export function MusicPlayer() {
 		currentTime,
 		duration,
 		isLoading,
+		isDownloading,
 		error,
 		seek,
 		setVolume: setPlayerVolume,
@@ -56,6 +58,10 @@ export function MusicPlayer() {
 			console.error("[v0] Search error:", error);
 		}
 	}, []);
+	const handleDownload = useCallback(() => {
+		//not implemented yet
+		return;
+	}, [currentTrack, playTrack]);
 
 	const handleAddToQueue = useCallback((track: Track) => {
 		setQueue((prev) => [...prev, track]);
@@ -155,8 +161,8 @@ export function MusicPlayer() {
 
 			{/* Main Content */}
 			<div className='flex flex-1 overflow-hidden'>
-				{/* Sidebar Navigation */}
-				<nav className='w-48 border-r border-border bg-card/30 p-4'>
+				{/* Sidebar Navigation (Desktop) */}
+				<nav className='hidden md:block w-48 border-r border-border bg-card/30 p-4'>
 					<div className='space-y-2'>
 						{["now-playing", "queue", "search"].map((tab) => (
 							<button
@@ -170,6 +176,7 @@ export function MusicPlayer() {
 							</button>
 						))}
 					</div>
+
 					<div className='mt-8 border-t border-border pt-4'>
 						<p className='text-xs font-semibold text-muted-foreground mb-3'>QUEUE</p>
 						<p className='text-sm text-foreground'>{queue.length} tracks</p>
@@ -191,7 +198,8 @@ export function MusicPlayer() {
 					)}
 
 					{/* Content Area */}
-					<div className='flex-1 overflow-y-auto p-6'>
+					{/* <div className='flex-1 overflow-y-auto p-6'> */}
+					<div className='flex-1 overflow-y-auto p-6 pb-20 md:pb-6'>
 						{currentTab === "now-playing" && (
 							<NowPlaying
 								track={currentTrack}
@@ -222,7 +230,7 @@ export function MusicPlayer() {
 
 			{/* Bottom Player Controls */}
 			<footer className='border-t border-border bg-card/50 backdrop-blur-sm p-4'>
-				<div className='mx-auto max-w-7xl'>
+				<div className='mx-auto max-w-7xl pb-15 md:pb-0'>
 					{/* Progress Bar */}
 					{currentTrack && (
 						<div className='mb-4'>
@@ -258,7 +266,7 @@ export function MusicPlayer() {
 								onClick={handlePlayPrevious}
 								className='rounded-lg bg-muted p-2 hover:bg-primary transition-colors'
 								title='Previous'>
-								⏮
+								<SkipBack className='transform' />
 							</button>
 							<button
 								onClick={togglePlayPause}
@@ -266,22 +274,33 @@ export function MusicPlayer() {
 								className='rounded-lg bg-primary p-2 text-primary-foreground hover:bg-secondary transition-colors disabled:opacity-50'
 								title={isPlaying ? "Pause" : "Play"}>
 								{isLoading ?
-									"⟳"
+									<RefreshCw className='animate-spin' />
 								: isPlaying ?
-									"⏸"
-								:	"▶"}
+									<Pause />
+								:	<Play />}
 							</button>
 							<button
 								onClick={handlePlayNext}
 								className='rounded-lg bg-muted p-2 hover:bg-primary transition-colors'
 								title='Next'>
-								⏭
+								<SkipForward className='transform' />
+							</button>
+							<button
+								disabled={!isDownloading && !currentTrack}
+								onClick={handleDownload}
+								className='rounded-lg bg-muted p-2 hover:bg-primary transition-colors'
+								title='Download'>
+								{isDownloading ?
+									<RefreshCw className='animate-spin text-green-500' />
+								:	<ArrowDownToLine className='text-muted-foreground' />}
 							</button>
 						</div>
 
 						{/* Volume Control */}
 						<div className='flex items-center gap-2'>
-							<span className='text-xs text-muted-foreground'>🔊</span>
+							{/* <span className='text-xs text-muted-foreground'></span>
+							 */}
+							<Volume2 className='w-4 h-4 text-muted-foreground' />
 							<input
 								type='range'
 								min='0'
@@ -296,6 +315,38 @@ export function MusicPlayer() {
 					</div>
 				</div>
 			</footer>
+			{/* Bottom Navigation (Mobile) */}
+			<nav className='fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/80 backdrop-blur md:hidden'>
+				<div className='flex justify-around py-2'>
+					<button
+						onClick={() => setCurrentTab("now-playing")}
+						className={`flex flex-col items-center gap-1 text-xs ${
+							currentTab === "now-playing" ? "text-primary" : "text-muted-foreground"
+						}`}>
+						<Music className='w-5 h-5' />
+						Now
+					</button>
+
+					<button
+						onClick={() => setCurrentTab("queue")}
+						className={`flex flex-col items-center gap-1 text-xs ${
+							currentTab === "queue" ? "text-primary" : "text-muted-foreground"
+						}`}>
+						<List className='w-5 h-5' />
+						Queue
+					</button>
+
+					<button
+						onClick={() => setCurrentTab("search")}
+						disabled={!isHealthy}
+						className={`flex flex-col items-center gap-1 text-xs ${
+							currentTab === "search" ? "text-primary" : "text-muted-foreground"
+						} ${!isHealthy ? "opacity-50" : ""}`}>
+						<Search className='w-5 h-5' />
+						Search
+					</button>
+				</div>
+			</nav>
 		</div>
 	);
 }

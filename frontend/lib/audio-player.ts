@@ -94,7 +94,7 @@ export class AudioPlayer {
 			// BƯỚC 2: Tải full blob ở background (không block playback)
 			console.log("[AudioPlayer] 📥 Downloading full stream in background...");
 			this.isBuffering = true;
-
+			this.emit("startDownload", null);
 			fetch(`${backendUrl}/api/stream/play`, {
 				method: "POST",
 				headers: {
@@ -108,7 +108,7 @@ export class AudioPlayer {
 
 					this.bufferedBlob = blob;
 					this.isBuffering = false;
-
+					this.emit("endDownload", null);
 					// Lưu vị trí hiện tại
 					const wasPlaying = !this.audio.paused;
 					const currentPosition = this.audio.currentTime;

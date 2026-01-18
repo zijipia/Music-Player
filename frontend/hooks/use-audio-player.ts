@@ -10,6 +10,7 @@ export function useAudioPlayer() {
 	const [currentTime, setCurrentTime] = useState(0);
 	const [duration, setDuration] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
+	const [isDownloading, setIsDownloading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
@@ -22,6 +23,8 @@ export function useAudioPlayer() {
 		player.on("duration", (dur: number) => setDuration(dur));
 		player.on("loading", () => setIsLoading(true));
 		player.on("canplay", () => setIsLoading(false));
+		player.on("startDownload", () => setIsDownloading(true));
+		player.on("endDownload", () => setIsDownloading(false));
 		player.on("error", (err: any) => {
 			console.error("[v0] Player error:", err);
 			setError("Playback error occurred");
@@ -70,6 +73,7 @@ export function useAudioPlayer() {
 		currentTime,
 		duration,
 		isLoading,
+		isDownloading,
 		error,
 	};
 }
