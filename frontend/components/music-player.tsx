@@ -20,10 +20,11 @@ export interface Track {
 }
 
 export function MusicPlayer() {
-	const [currentTab, setCurrentTab] = useState<"now-playing" | "queue" | "search">("now-playing");
+	const [currentTab, setCurrentTab] = useState<"now-playing" | "queue" | "search" | "suggestions">("now-playing");
 	const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
 	const [queue, setQueue] = useState<Track[]>([]);
 	const [searchResults, setSearchResults] = useState<Track[]>([]);
+	const [suggestions, setSuggestions] = useState<Track[]>([]);
 	const [volume, setVolume] = useState(70);
 
 	const { isHealthy, isChecking, error: healthError } = useHealthCheck();
@@ -58,6 +59,20 @@ export function MusicPlayer() {
 			console.error("[v0] Search error:", error);
 		}
 	}, []);
+
+	const handleSearchSuggestions = useCallback(async () => {
+		try {
+			const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+			const response = await fetch(`${backendUrl}/api/suggestions?q=${currentTrack?.url || ""}`);
+			const data = await response.json();
+			console.log("[v0] Suggestions results:", data);
+			setSearchResults(data.results || []);
+			setCurrentTab("suggestions");
+		} catch (error) {
+			console.error("[v0] Suggestions error:", error);
+		}
+	}, []);
+
 	const handleDownload = useCallback(() => {
 		//not implemented yet
 		return;
@@ -164,7 +179,7 @@ export function MusicPlayer() {
 				{/* Sidebar Navigation (Desktop) */}
 				<nav className='hidden md:block w-48 border-r border-border bg-card/30 p-4'>
 					<div className='space-y-2'>
-						{["now-playing", "queue", "search"].map((tab) => (
+						{["now-playing", "queue", "search", "suggestions"].map((tab) => (
 							<button
 								key={tab}
 								onClick={() => setCurrentTab(tab as typeof currentTab)}
@@ -223,6 +238,26 @@ export function MusicPlayer() {
 								onPlay={handlePlayTrack}
 								disabled={!isHealthy}
 							/>
+						)}
+						{currentTab === "suggestions" && suggestions.length > 0 && (
+							<SearchResults
+								results={suggestions}
+								onAddToQueue={handleAddToQueue}
+								onPlay={handlePlayTrack}
+								disabled={!isHealthy}
+							/>
+						)}
+						{currentTab === "suggestions" && suggestions.length === 0 && (
+							<div>
+								<h2 className='text-xl font-bold text-foreground mb-4'>Suggestions</h2>
+								<p className='text-muted-foreground'>No suggestions available. Play a track to get suggestions.</p>
+								<button
+									onClick={handleSearchSuggestions}
+									// disabled={!currentTrack}
+									className='mt-4 rounded-lg bg-primary px-4 py-2 text-primary-foreground hover:bg-secondary transition-colors disabled:opacity-50'>
+									Get Suggestions
+								</button>
+							</div>
 						)}
 					</div>
 				</div>
@@ -344,6 +379,14 @@ export function MusicPlayer() {
 						} ${!isHealthy ? "opacity-50" : ""}`}>
 						<Search className='w-5 h-5' />
 						Search
+					</button>
+					<button
+						onClick={() => setCurrentTab("suggestions")}
+						className={`flex flex-col items-center gap-1 text-xs ${
+							currentTab === "suggestions" ? "text-primary" : "text-muted-foreground"
+						}`}>
+						<RefreshCw className='w-5 h-5' />
+						Suggestions
 					</button>
 				</div>
 			</nav>
