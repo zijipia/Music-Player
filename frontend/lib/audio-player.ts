@@ -340,4 +340,26 @@ try{
 		this.bufferedBlob = null;
 		this.currentTrack = null;
 	}
+
+	downloadCurrentTrack() {
+		if (!this.bufferedBlob || !this.currentTrack) {
+			console.error("[Player] No track currently loaded for download");
+			return;
+		}
+
+		const fileName = `${this.currentTrack.artist} - ${this.currentTrack.title}.mp3`;
+		const url = URL.createObjectURL(this.bufferedBlob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = fileName;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+		console.log("[Player] Download started for:", fileName);
+	}
+
+	canDownload(): boolean {
+		return this.bufferedBlob !== null && this.currentTrack !== null;
+	}
 }

@@ -64,11 +64,23 @@ export function useAudioPlayer() {
 		}
 	};
 
+	const downloadTrack = () => {
+		if (playerRef.current) {
+			playerRef.current.downloadCurrentTrack();
+		}
+	};
+
+	const canDownloadTrack = () => {
+		return playerRef.current?.canDownload() ?? false;
+	};
+
 	return {
 		playTrack,
 		togglePlayPause,
 		setVolume,
 		seek,
+		downloadTrack,
+		canDownloadTrack,
 		isPlaying,
 		currentTime,
 		duration,

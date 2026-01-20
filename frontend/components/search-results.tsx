@@ -1,18 +1,42 @@
 "use client";
 
 import type { Track } from "./music-player";
+import { useState } from "react";
 
 interface SearchResultsProps {
 	results: Track[];
 	onAddToQueue: (track: Track) => void;
 	onPlay: (track: Track) => void;
 	disabled?: boolean;
+	type?: string;
+	Refresh?: () => void;
 }
 
-export function SearchResults({ results, onAddToQueue, onPlay, disabled }: SearchResultsProps) {
+export function SearchResults({ results, onAddToQueue, onPlay, disabled, type, Refresh }: SearchResultsProps) {
+	const [rotating, setRotating] = useState(false);
+
+	const handleClick = async () => {
+		setRotating(true);
+		await Refresh?.();
+		setTimeout(() => setRotating(false), 300);
+	};
 	return (
 		<div>
-			<h2 className='text-xl font-bold text-foreground mb-4'>Search Results</h2>
+			<h2 className='text-xl font-bold text-foreground mb-4'>
+				{type === "Suggestions" ? "Suggestions" : "Search Results"}
+				<button
+					title='Refresh'
+					onClick={handleClick}
+					className='ml-8 rounded-lg bg-primary px-4 py-1
+                 text-primary-foreground hover:bg-secondary
+                 transition-colors font-semibold'>
+					<span
+						className={`inline-block transition-transform duration-300
+          ${rotating ? "rotate-360" : ""}`}>
+						⟳
+					</span>
+				</button>
+			</h2>
 			{results.length === 0 || disabled ?
 				<p className='text-muted-foreground'>No results found</p>
 			:	<div className='grid gap-3'>
@@ -34,7 +58,6 @@ export function SearchResults({ results, onAddToQueue, onPlay, disabled }: Searc
 									+
 								</button>
 							</div>
-							{/* <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-primary to-secondary flex-shrink-0" /> */}
 							<img
 								src={track.thumbnail}
 								alt={track.title ?? "Track thumbnail"}

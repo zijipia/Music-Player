@@ -27,7 +27,7 @@ export function MusicPlayer() {
 	const [suggestions, setSuggestions] = useState<Track[]>([]);
 	const [volume, setVolume] = useState(70);
 
-	const { isHealthy, isChecking, error: healthError } = useHealthCheck();
+	const { isHealthy, isChecking, error: healthError, checkHealth } = useHealthCheck();
 
 	const {
 		playTrack,
@@ -40,6 +40,8 @@ export function MusicPlayer() {
 		error,
 		seek,
 		setVolume: setPlayerVolume,
+		downloadTrack,
+		canDownloadTrack,
 	} = useAudioPlayer();
 
 	useEffect(() => {
@@ -79,11 +81,6 @@ export function MusicPlayer() {
 			console.error("[v0] Suggestions error:", error);
 		}
 	}, []);
-
-	const handleDownload = useCallback(() => {
-		//not implemented yet
-		return;
-	}, [currentTrack, playTrack]);
 
 	const handleAddToQueue = useCallback((track: Track) => {
 		setQueue((prev) => [...prev, track]);
@@ -171,12 +168,11 @@ export function MusicPlayer() {
 					<div className='max-w-7xl mx-auto'>
 						<h3 className='font-semibold text-destructive text-sm mb-1'>Backend Connection Error</h3>
 						<p className='text-sm text-destructive/90 mb-2'>{healthError}</p>
-						<p className='text-xs text-destructive/70'>
-							Please ensure the backend server is running at{" "}
-							<code className='bg-destructive/5 px-2 py-1 rounded'>
-								{process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001"}
-							</code>
-						</p>
+						<button
+							onClick={() => checkHealth()}
+							className='rounded-lg bg-destructive px-4 py-2 text-destructive-foreground hover:bg-destructive/80 transition-colors text-sm'>
+							Retry Connection
+						</button>
 					</div>
 				</div>
 			)}
@@ -229,6 +225,9 @@ export function MusicPlayer() {
 								isLoading={isLoading}
 								currentTime={currentTime}
 								duration={duration}
+								onDownload={downloadTrack}
+								canDownload={canDownloadTrack()}
+								isDownloading={isDownloading}
 							/>
 						)}
 						{currentTab === "queue" && (
@@ -240,6 +239,7 @@ export function MusicPlayer() {
 						)}
 						{currentTab === "search" && (
 							<SearchResults
+								type='search'
 								results={searchResults}
 								onAddToQueue={handleAddToQueue}
 								onPlay={handlePlayTrack}
@@ -248,10 +248,12 @@ export function MusicPlayer() {
 						)}
 						{currentTab === "suggestions" && suggestions.length > 0 && (
 							<SearchResults
+								type='Suggestions'
 								results={suggestions}
 								onAddToQueue={handleAddToQueue}
 								onPlay={handlePlayTrack}
 								disabled={!isHealthy}
+								Refresh={handleSearchSuggestions}
 							/>
 						)}
 						{currentTab === "suggestions" && suggestions.length === 0 && (
@@ -326,15 +328,6 @@ export function MusicPlayer() {
 								className='rounded-lg bg-muted p-2 hover:bg-primary transition-colors'
 								title='Next'>
 								<SkipForward className='transform' />
-							</button>
-							<button
-								disabled={!isDownloading && !currentTrack}
-								onClick={handleDownload}
-								className='rounded-lg bg-muted p-2 hover:bg-primary transition-colors'
-								title='Download'>
-								{isDownloading ?
-									<RefreshCw className='animate-spin text-green-500' />
-								:	<ArrowDownToLine className='text-muted-foreground' />}
 							</button>
 						</div>
 
