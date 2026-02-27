@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { SearchBar } from "./search-bar";
 import { NowPlaying } from "./now-playing";
 import { Queue } from "./queue";
 import { SearchResults } from "./search-results";
+import { Header } from "./header";
 import { useAudioPlayer } from "@/hooks/use-audio-player";
 import { useHealthCheck } from "@/hooks/use-health-check";
 import { Music, Search, List, Play, Pause, SkipForward, SkipBack, Volume2, ArrowDownToLine, RefreshCw } from "lucide-react";
@@ -42,6 +43,7 @@ export function MusicPlayer() {
 		setVolume: setPlayerVolume,
 		downloadTrack,
 		canDownloadTrack,
+		getAudioElement,
 	} = useAudioPlayer();
 
 	useEffect(() => {
@@ -143,26 +145,11 @@ export function MusicPlayer() {
 	return (
 		<div className='flex h-screen flex-col bg-background'>
 			{/* Header */}
-			<header className='border-b border-border bg-card/50 backdrop-blur-sm'>
-				<div className='mx-auto max-w-7xl px-6 py-4 flex justify-between items-center'>
-					<h1 className='text-2xl font-bold text-primary'>ZiMusic</h1>
-					<div className='flex items-center gap-2'>
-						{isChecking ?
-							<span className='text-xs text-muted-foreground'>Checking backend...</span>
-						: isHealthy ?
-							<span className='flex items-center gap-1 text-xs text-green-500'>
-								<span className='inline-block w-2 h-2 bg-green-500 rounded-full'></span>
-								Connected
-							</span>
-						:	<span className='flex items-center gap-1 text-xs text-red-500'>
-								<span className='inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse'></span>
-								Disconnected
-							</span>
-						}
-					</div>
-				</div>
-			</header>
-
+			<Header
+				isPlaying={isPlaying}
+				isLoading={isLoading}
+				audioElement={getAudioElement()}
+			/>
 			{!isHealthy && !isChecking && (
 				<div className='bg-destructive/10 border-b border-destructive/20 px-6 py-4'>
 					<div className='max-w-7xl mx-auto'>
@@ -228,6 +215,8 @@ export function MusicPlayer() {
 								onDownload={downloadTrack}
 								canDownload={canDownloadTrack()}
 								isDownloading={isDownloading}
+								onSeek={seek}
+								audioElement={getAudioElement()}
 							/>
 						)}
 						{currentTab === "queue" && (

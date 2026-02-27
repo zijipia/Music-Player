@@ -77,20 +77,22 @@ export class AudioPlayer {
 			this.currentTrack = trackData;
 			const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 			const currentTime = this.audio.currentTime || 0;
-try{
-			// BƯỚC 1: Phát ngay với progressive stream
-			const params = new URLSearchParams({
-				trackData: JSON.stringify(trackData),
-			});
+			try {
+				// BƯỚC 1: Phát ngay với progressive stream
+				const params = new URLSearchParams({
+					trackData: JSON.stringify(trackData),
+				});
 
-			this.progressiveUrl = `${backendUrl}/api/stream/play?${params.toString()}`;
-			this.audio.src = this.progressiveUrl;
+				this.progressiveUrl = `${backendUrl}/api/stream/play?${params.toString()}`;
+				this.audio.src = this.progressiveUrl;
 
-			console.log("[AudioPlayer] ⚡ Progressive stream started - playing now!");
+				console.log("[AudioPlayer] ⚡ Progressive stream started - playing now!");
 
-			await this.audio.play();
-			this.emit("playback", { status: "playing", track: trackData, mode: "progressive" });
-}catch(e){console.log(e)};
+				await this.audio.play();
+				this.emit("playback", { status: "playing", track: trackData, mode: "progressive" });
+			} catch (e) {
+				console.log(e);
+			}
 			// BƯỚC 2: Tải full blob ở background (không block playback)
 			console.log("[AudioPlayer] 📥 Downloading full stream in background...");
 			this.isBuffering = true;
@@ -361,5 +363,9 @@ try{
 
 	canDownload(): boolean {
 		return this.bufferedBlob !== null && this.currentTrack !== null;
+	}
+
+	getAudioElement(): HTMLAudioElement {
+		return this.audio;
 	}
 }
