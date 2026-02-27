@@ -1,5 +1,4 @@
 import type { Track } from "./music-player";
-// import "./now-playing.css";
 import { ArrowDownToLine, RefreshCw } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import AudioSpectrum from "./audio-spectrum";
@@ -17,7 +16,7 @@ interface NowPlayingProps {
 	audioElement?: HTMLAudioElement | null;
 }
 
-type VisualizationType = 'draw' | 'bars' | 'comment';
+type VisualizationType = "draw" | "bars" | "comment";
 
 export function NowPlaying({
 	track,
@@ -31,7 +30,7 @@ export function NowPlaying({
 	onSeek,
 	audioElement,
 }: NowPlayingProps) {
-	const [visualization, setVisualization] = useState<VisualizationType>('draw');
+	const [visualization, setVisualization] = useState<VisualizationType>("draw");
 	const audioRef = useRef<HTMLAudioElement>(audioElement || null);
 
 	// Update the ref when audioElement changes
@@ -59,26 +58,23 @@ export function NowPlaying({
 						<div className='mb-6 p-4 rounded-lg bg-card border border-border'>
 							<div className='mb-3 h-16 w-full'>
 								<AudioSpectrum
-									audioRef={audioRef}
+									audioRef={audioRef as any}
 									currentTime={currentTime}
 									duration={duration}
 									onSeek={onSeek || (() => {})}
 									visualizationType={visualization}
 								/>
 							</div>
-							
+
 							{/* Visualization Mode Selector */}
 							<div className='flex gap-2 justify-center'>
-								{(['draw', 'bars', 'comment'] as const).map((mode) => (
+								{(["draw", "bars", "comment"] as const).map((mode) => (
 									<button
 										key={mode}
 										onClick={() => setVisualization(mode)}
 										className={`px-3 py-1 text-sm rounded-md transition-colors capitalize ${
-											visualization === mode
-												? 'bg-primary text-primary-foreground'
-												: 'bg-muted text-foreground hover:bg-muted/80'
-										}`}
-									>
+											visualization === mode ? "bg-primary text-primary-foreground" : "bg-muted text-foreground hover:bg-muted/80"
+										}`}>
 										{mode}
 									</button>
 								))}

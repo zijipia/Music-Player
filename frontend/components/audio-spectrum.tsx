@@ -1,227 +1,206 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-
-type VisualizationType = 'draw' | 'bars' | 'comment';
+import { useEffect, useRef, useState } from "react";
+import { getAudioNodes } from "@/hooks/use-audio-context";
+type VisualizationType = "draw" | "bars" | "comment";
 
 interface AudioSpectrumProps {
-  audioRef: React.RefObject<HTMLAudioElement>;
-  currentTime: number;
-  duration: number;
-  onSeek: (time: number) => void;
-  visualizationType?: VisualizationType;
+	audioRef: React.RefObject<HTMLAudioElement>;
+	currentTime: number;
+	duration: number;
+	onSeek: (time: number) => void;
+	visualizationType?: VisualizationType;
 }
 
 export default function AudioSpectrum({
-  audioRef,
-  currentTime,
-  duration,
-  onSeek,
-  visualizationType = 'draw',
+	audioRef,
+	currentTime,
+	duration,
+	onSeek,
+	visualizationType = "draw",
 }: AudioSpectrumProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
-  const analyserRef = useRef<AnalyserNode>();
-  const dataArrayRef = useRef<Uint8Array>();
-  const audioCtxRef = useRef<AudioContext>();
+	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const animationRef = useRef<number>(0);
+	const analyserRef = useRef<AnalyserNode>(null);
+	const dataArrayRef = useRef<Uint8Array<ArrayBuffer>>(null);
 
-  useEffect(() => {
-    if (!audioRef.current) return;
+	useEffect(() => {
+		if (!audioRef.current) return;
 
-    const audioCtx = new AudioContext();
-    audioCtxRef.current = audioCtx;
+		const { analyserNode } = getAudioNodes(audioRef.current);
 
-    const source = audioCtx.createMediaElementSource(audioRef.current);
-    const analyser = audioCtx.createAnalyser();
+		analyserRef.current = analyserNode!;
+		dataArrayRef.current = new Uint8Array(analyserNode!.frequencyBinCount);
+	}, []);
 
-    analyser.fftSize = 256;
-    analyser.smoothingTimeConstant = 0.8;
+	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (!canvas || !analyserRef.current || !dataArrayRef.current) return;
 
-    source.connect(analyser);
-    analyser.connect(audioCtx.destination);
+		const ctx = canvas.getContext("2d");
+		if (!ctx) return;
 
-    analyserRef.current = analyser;
-    dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
+		function drawSmoothWave(ctx: CanvasRenderingContext2D, data: Uint8Array, centerY: number, sliceWidth: number, scale: number) {
+			ctx.beginPath();
 
-    return () => {
-      audioCtx.close();
-    };
-  }, [audioRef]);
+			let x = 0;
+			for (let i = 0; i < data.length; i++) {
+				const v = data[i] / 128.0;
+				const y = centerY + (v - 1) * centerY * scale;
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !analyserRef.current || !dataArrayRef.current) return;
+				if (i === 0) ctx.moveTo(x, y);
+				else ctx.quadraticCurveTo(x, y, x + sliceWidth, y);
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+				x += sliceWidth;
+			}
 
-    function drawSmoothWave(
-      ctx: CanvasRenderingContext2D,
-      data: Uint8Array,
-      centerY: number,
-      sliceWidth: number,
-      scale: number
-    ) {
-      ctx.beginPath();
+			ctx.stroke();
+		}
 
-      let x = 0;
-      for (let i = 0; i < data.length; i++) {
-        const v = data[i] / 128.0;
-        const y = centerY + (v - 1) * centerY * scale;
+		const drawVisualization = () => {
+			const analyser = analyserRef.current!;
+			const dataArray = dataArrayRef.current!;
+			const ctx = canvas.getContext("2d")!;
+			const width = canvas.width;
+			const height = canvas.height;
+			const centerY = height / 2;
 
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.quadraticCurveTo(x, y, x + sliceWidth, y);
+			ctx.clearRect(0, 0, width, height);
 
-        x += sliceWidth;
-      }
+			if (visualizationType === "draw") {
+				// Smooth waveform draw visualization
+				analyser.getByteTimeDomainData(dataArray);
 
-      ctx.stroke();
-    }
+				const sliceWidth = width / dataArray.length;
 
-    const drawVisualization = () => {
-      const analyser = analyserRef.current!;
-      const dataArray = dataArrayRef.current!;
-      const ctx = canvas.getContext('2d')!;
-      const width = canvas.width;
-      const height = canvas.height;
-      const centerY = height / 2;
+				const gradient = ctx.createLinearGradient(0, 0, width, 0);
+				gradient.addColorStop(0, "rgba(255,255,255,0.9)");
+				gradient.addColorStop(0.35, "rgba(255,220,170,0.95)");
+				gradient.addColorStop(0.6, "rgba(255,185,120,0.95)");
+				gradient.addColorStop(1, "rgba(255,255,255,0.9)");
 
-      ctx.clearRect(0, 0, width, height);
+				ctx.strokeStyle = gradient;
 
-      if (visualizationType === 'draw') {
-        // Smooth waveform draw visualization
-        analyser.getByteTimeDomainData(dataArray);
+				// Glow layer
+				ctx.lineWidth = 4;
+				ctx.shadowBlur = 12;
+				ctx.shadowColor = "rgba(255,210,150,0.9)";
+				ctx.globalAlpha = 0.18;
 
-        const sliceWidth = width / dataArray.length;
+				drawSmoothWave(ctx, dataArray, centerY, sliceWidth, 0.95);
 
-        const gradient = ctx.createLinearGradient(0, 0, width, 0);
-        gradient.addColorStop(0, 'rgba(255,255,255,0.9)');
-        gradient.addColorStop(0.35, 'rgba(255,220,170,0.95)');
-        gradient.addColorStop(0.6, 'rgba(255,185,120,0.95)');
-        gradient.addColorStop(1, 'rgba(255,255,255,0.9)');
+				// Sharp layer
+				ctx.lineWidth = 1.6;
+				ctx.shadowBlur = 8;
+				ctx.globalAlpha = 1;
 
-        ctx.strokeStyle = gradient;
+				drawSmoothWave(ctx, dataArray, centerY, sliceWidth, 0.85);
+			} else if (visualizationType === "bars") {
+				// Frequency bars visualization
+				analyser.getByteFrequencyData(dataArray);
 
-        // Glow layer
-        ctx.lineWidth = 4;
-        ctx.shadowBlur = 12;
-        ctx.shadowColor = 'rgba(255,210,150,0.9)';
-        ctx.globalAlpha = 0.18;
+				const barCount = 64;
+				const step = Math.floor(dataArray.length / barCount);
+				const barWidth = width / barCount;
 
-        drawSmoothWave(ctx, dataArray, centerY, sliceWidth, 0.95);
+				for (let i = 0; i < barCount; i++) {
+					const value = dataArray[i * step] / 255;
+					const barHeight = value * (height * 0.85);
 
-        // Sharp layer
-        ctx.lineWidth = 1.6;
-        ctx.shadowBlur = 8;
-        ctx.globalAlpha = 1;
+					const x = i * barWidth;
 
-        drawSmoothWave(ctx, dataArray, centerY, sliceWidth, 0.85);
-      } else if (visualizationType === 'bars') {
-        // Frequency bars visualization
-        analyser.getByteFrequencyData(dataArray);
+					const gradient = ctx.createLinearGradient(0, centerY - barHeight, 0, centerY + barHeight);
+					gradient.addColorStop(0, "rgba(255, 200, 120, 0.15)");
+					gradient.addColorStop(0.5, "rgba(255, 215, 150, 0.9)");
+					gradient.addColorStop(1, "rgba(255, 120, 100, 0.15)");
 
-        const barCount = 64;
-        const step = Math.floor(dataArray.length / barCount);
-        const barWidth = width / barCount;
+					ctx.fillStyle = gradient;
 
-        for (let i = 0; i < barCount; i++) {
-          const value = dataArray[i * step] / 255;
-          const barHeight = value * (height * 0.85);
+					const hue = (performance.now() / 40 + i * 3) % 360;
+					ctx.shadowColor = `hsla(${hue},100%,70%,0.9)`;
+					ctx.shadowBlur = 5;
 
-          const x = i * barWidth;
+					// Upper bar
+					ctx.fillRect(x + 1, centerY - barHeight, barWidth - 2, barHeight);
 
-          const gradient = ctx.createLinearGradient(0, centerY - barHeight, 0, centerY + barHeight);
-          gradient.addColorStop(0, 'rgba(255, 200, 120, 0.15)');
-          gradient.addColorStop(0.5, 'rgba(255, 215, 150, 0.9)');
-          gradient.addColorStop(1, 'rgba(255, 120, 100, 0.15)');
+					// Lower mirror bar
+					ctx.fillRect(x + 1, centerY, barWidth - 2, barHeight);
+				}
+			} else if (visualizationType === "comment") {
+				// Minimal comment mode - just a thin line with circles
+				analyser.getByteTimeDomainData(dataArray);
 
-          ctx.fillStyle = gradient;
+				const sliceWidth = width / dataArray.length;
 
-          const hue = (performance.now() / 40 + i * 3) % 360;
-          ctx.shadowColor = `hsla(${hue},100%,70%,0.9)`;
-          ctx.shadowBlur = 5;
+				ctx.strokeStyle = "rgba(255,215,150,0.7)";
+				ctx.lineWidth = 1;
+				ctx.shadowBlur = 4;
+				ctx.shadowColor = "rgba(255,210,150,0.5)";
 
-          // Upper bar
-          ctx.fillRect(x + 1, centerY - barHeight, barWidth - 2, barHeight);
+				ctx.beginPath();
+				let x = 0;
+				for (let i = 0; i < dataArray.length; i++) {
+					const v = dataArray[i] / 128.0;
+					const y = centerY + (v - 1) * centerY * 0.5;
 
-          // Lower mirror bar
-          ctx.fillRect(x + 1, centerY, barWidth - 2, barHeight);
-        }
-      } else if (visualizationType === 'comment') {
-        // Minimal comment mode - just a thin line with circles
-        analyser.getByteTimeDomainData(dataArray);
+					if (i === 0) ctx.moveTo(x, y);
+					else ctx.lineTo(x, y);
 
-        const sliceWidth = width / dataArray.length;
+					x += sliceWidth;
+				}
+				ctx.stroke();
 
-        ctx.strokeStyle = 'rgba(255,215,150,0.7)';
-        ctx.lineWidth = 1;
-        ctx.shadowBlur = 4;
-        ctx.shadowColor = 'rgba(255,210,150,0.5)';
+				// Add subtle dots every 32 pixels
+				ctx.fillStyle = "rgba(255,215,150,0.4)";
+				x = 0;
+				for (let i = 0; i < dataArray.length; i += 8) {
+					const v = dataArray[i] / 128.0;
+					const y = centerY + (v - 1) * centerY * 0.5;
+					ctx.beginPath();
+					ctx.arc(x, y, 2, 0, Math.PI * 2);
+					ctx.fill();
+					x += sliceWidth * 8;
+				}
+			}
 
-        ctx.beginPath();
-        let x = 0;
-        for (let i = 0; i < dataArray.length; i++) {
-          const v = dataArray[i] / 128.0;
-          const y = centerY + (v - 1) * centerY * 0.5;
+			// Progress indicator
+			if (duration > 0) {
+				const px = (currentTime / duration) * width;
+				ctx.strokeStyle = "rgba(255,220,160,0.85)";
+				ctx.lineWidth = 2;
+				ctx.globalAlpha = 1;
+				ctx.shadowBlur = 0;
+				ctx.beginPath();
+				ctx.moveTo(px, 0);
+				ctx.lineTo(px, height);
+				ctx.stroke();
+			}
 
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
+			animationRef.current = requestAnimationFrame(drawVisualization);
+		};
 
-          x += sliceWidth;
-        }
-        ctx.stroke();
+		drawVisualization();
 
-        // Add subtle dots every 32 pixels
-        ctx.fillStyle = 'rgba(255,215,150,0.4)';
-        x = 0;
-        for (let i = 0; i < dataArray.length; i += 8) {
-          const v = dataArray[i] / 128.0;
-          const y = centerY + (v - 1) * centerY * 0.5;
-          ctx.beginPath();
-          ctx.arc(x, y, 2, 0, Math.PI * 2);
-          ctx.fill();
-          x += sliceWidth * 8;
-        }
-      }
+		return () => {
+			if (animationRef.current) cancelAnimationFrame(animationRef.current);
+		};
+	}, [currentTime, duration, visualizationType]);
 
-      // Progress indicator
-      if (duration > 0) {
-        const px = (currentTime / duration) * width;
-        ctx.strokeStyle = 'rgba(255,220,160,0.85)';
-        ctx.lineWidth = 2;
-        ctx.globalAlpha = 1;
-        ctx.shadowBlur = 0;
-        ctx.beginPath();
-        ctx.moveTo(px, 0);
-        ctx.lineTo(px, height);
-        ctx.stroke();
-      }
+	const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+		if (!canvasRef.current || duration === 0) return;
 
-      animationRef.current = requestAnimationFrame(drawVisualization);
-    };
+		const rect = canvasRef.current.getBoundingClientRect();
+		const x = e.clientX - rect.left;
+		onSeek((x / rect.width) * duration);
+	};
 
-    drawVisualization();
-
-    return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    };
-  }, [currentTime, duration, visualizationType]);
-
-  const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!canvasRef.current || duration === 0) return;
-
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    onSeek((x / rect.width) * duration);
-  };
-
-  return (
-    <canvas
-      ref={canvasRef}
-      width={500}
-      height={60}
-      onClick={handleClick}
-      className="w-full h-full bg-transparent rounded-lg cursor-pointer"
-    />
-  );
+	return (
+		<canvas
+			ref={canvasRef}
+			width={500}
+			height={100}
+			onClick={handleClick}
+			className='w-full h-full bg-transparent rounded-lg cursor-pointer'
+		/>
+	);
 }

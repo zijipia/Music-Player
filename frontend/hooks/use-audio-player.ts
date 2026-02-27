@@ -38,7 +38,7 @@ export function useAudioPlayer() {
 	const playTrack = (track: Track) => {
 		if (playerRef.current) {
 			setError(null);
-			playerRef.current.playStreamHybrid(track);
+			playerRef.current.playStreamFast(track);
 		}
 	};
 
