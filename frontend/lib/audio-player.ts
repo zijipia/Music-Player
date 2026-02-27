@@ -362,4 +362,8 @@ try{
 	canDownload(): boolean {
 		return this.bufferedBlob !== null && this.currentTrack !== null;
 	}
+
+	getAudioElement(): HTMLAudioElement {
+		return this.audio;
+	}
 }

@@ -42,6 +42,7 @@ export function MusicPlayer() {
 		setVolume: setPlayerVolume,
 		downloadTrack,
 		canDownloadTrack,
+		getAudioElement,
 	} = useAudioPlayer();
 
 	useEffect(() => {
@@ -218,18 +219,20 @@ export function MusicPlayer() {
 					{/* Content Area */}
 					{/* <div className='flex-1 overflow-y-auto p-6'> */}
 					<div className='flex-1 overflow-y-auto p-6 pb-20 md:pb-6'>
-						{currentTab === "now-playing" && (
-							<NowPlaying
-								track={currentTrack}
-								isPlaying={isPlaying}
-								isLoading={isLoading}
-								currentTime={currentTime}
-								duration={duration}
-								onDownload={downloadTrack}
-								canDownload={canDownloadTrack()}
-								isDownloading={isDownloading}
-							/>
-						)}
+					{currentTab === "now-playing" && (
+						<NowPlaying
+							track={currentTrack}
+							isPlaying={isPlaying}
+							isLoading={isLoading}
+							currentTime={currentTime}
+							duration={duration}
+							onDownload={downloadTrack}
+							canDownload={canDownloadTrack()}
+							isDownloading={isDownloading}
+							onSeek={seek}
+							audioElement={getAudioElement()}
+						/>
+					)}
 						{currentTab === "queue" && (
 							<Queue
 								tracks={queue}

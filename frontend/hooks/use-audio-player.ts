@@ -74,6 +74,10 @@ export function useAudioPlayer() {
 		return playerRef.current?.canDownload() ?? false;
 	};
 
+	const getAudioElement = () => {
+		return playerRef.current?.getAudioElement() ?? null;
+	};
+
 	return {
 		playTrack,
 		togglePlayPause,
@@ -81,6 +85,7 @@ export function useAudioPlayer() {
 		seek,
 		downloadTrack,
 		canDownloadTrack,
+		getAudioElement,
 		isPlaying,
 		currentTime,
 		duration,
